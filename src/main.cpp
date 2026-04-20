@@ -1,14 +1,23 @@
 #include <Arduino.h>
 #include <map>
 
-// put function declarations here:
-int myFunction(int, int);
-
 void setup() {
+
+  // Init SD
+
+  // Init microphone
+
+  // Init IR stuff
+
+  // Init display
+
   // Write code to lock_config.txt
 
   // Clear and recreate log file unlock_log.txt
+
 }
+
+std::string log_file = "unlock_log.txt";
 
 enum PROGRAM_STAGE {
   START,
@@ -34,6 +43,18 @@ std::map<int, std::string> keywordMap = {
   {6, "white"},
   {7, "yellow"}
 };
+
+using namespace std;
+/**
+ * @brief Log event to logfile in format: YY:MM:DD:HH:MM:SS,STAGE,RESULT,DETAIL
+ * 
+ * @param stage Stage enum indicating what stage we're in (i.e. KEYWORD_CORRECT)
+ * @param result The result of the stage
+ * @param detail Any details on the event
+ */
+void log_event_to_file(PROGRAM_STAGE stage, string result, string detail) {
+
+}
 
 void start() {
   // Read code from SD card (4 digits) (lock_config.txt) -> unlock_code
