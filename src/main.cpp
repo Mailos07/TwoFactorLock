@@ -11,6 +11,7 @@
 #define SD_CARD_PIN D2
 SdFat g_sd;
 
+/* –– Track State ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– */
 enum PROGRAM_STAGE {
   START,
   WAITING_FOR_CODE,
@@ -22,8 +23,10 @@ enum PROGRAM_STAGE {
   KEYWORD_INCORRECT,
   UNLOCKED
 };
-PROGRAM_STAGE current_stage = START;
-std::map<int, std::string> keywordMap = {
+PROGRAM_STAGE g_current_stage = START;
+
+/* –– Globals ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– */
+std::map<int, std::string> g_keyword_map = {
   {1, "blue"},
   {2, "cyan"},
   {3, "green"},
@@ -32,17 +35,24 @@ std::map<int, std::string> keywordMap = {
   {6, "white"},
   {7, "yellow"}
 };
-
 int keyword_int = 0;
 int unlock_code = 0;
 
+/* –– Forward Declarations ––––––––––––––––––––––––––––––––––––––––––––––––––––– */
+void start();
+void waiting_for_code();
+void check_code();
+void code_incorrect();
+void code_correct();
+void waiting_for_keyword();
+void keyword_correct();
+void keyword_incorrect();
+void unlocked();
+
+
 using namespace std;
 
-void read_code() {
-  FsFile code_file = g_sd.open(CODE_FILENAME, O_WRONLY | O_CREAT | O_APPEND);
-  // TODO: Read code in to unlock_code
-}
-
+/* –– Setup & Loop –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– */
 void setup() {
 
   // Init SD
@@ -63,72 +73,6 @@ void setup() {
 
 }
 
-void start() {
-  // Display LOCK
-  display_lock_screen();
-  
-  current_stage = WAITING_FOR_CODE;
-}
-
-void waiting_for_code() {
-  // Wait for IR input and process
-  // Should be showing code as typed on screen
-
-  // Once four digits have been entered (no two of the same digit back to back)
-  current_stage = CODE_ENTERED;
-}
-
-void check_code() {
-  // Correct code:
-  current_stage = CODE_CORRECT;
-
-  // Incorrect code:
-  current_stage = CODE_INCORRECT;
-}
-
-void code_incorrect() {
-
-  // Reset stage
-  current_stage = WAITING_FOR_CODE;
-}
-
-void code_correct() {
-
-  // Generate random int (1-7) and set voice keyword
-
-  // Display number for keyword
-
-  // Move to next stage
-  current_stage = WAITING_FOR_KEYWORD;
-}
-
-void waiting_for_keyword() {
-  // Should be showing keyword int
-  // Process audio input, check against expected keyword
-
-  // If correct keyword spoken
-  current_stage = KEYWORD_CORRECT;
-
-  // If incorrect keyword spoken (or timeout?)
-  current_stage = KEYWORD_INCORRECT;
-
-}
-
-void keyword_incorrect() {
-
-  // Reset stage
-  current_stage = WAITING_FOR_KEYWORD;
-}
-
-void keyword_correct() {
-  // Unlock
-  current_stage = UNLOCKED;
-}
-
-void unlocked() {
-  // Show unlocked?
-}
-
 /*
 
   Need to log every event: YY:MM:DD:HH:MM:SS,STAGE,RESULT,DETAIL
@@ -138,7 +82,7 @@ void unlocked() {
 
 */
 void loop() {
-  switch (current_stage) {
+  switch (g_current_stage) {
     case START:
       start();
     case WAITING_FOR_CODE:
@@ -167,4 +111,75 @@ void loop() {
     default :
       break;
   }
+}
+
+void read_code() {
+  FsFile code_file = g_sd.open(CODE_FILENAME, O_WRONLY | O_CREAT | O_APPEND);
+  // TODO: Read code in to unlock_code
+}
+
+void start() {
+  // Display LOCK
+  display_lock_screen();
+  
+  g_current_stage = WAITING_FOR_CODE;
+}
+
+void waiting_for_code() {
+  // Wait for IR input and process
+  // Should be showing code as typed on screen
+
+  // Once four digits have been entered (no two of the same digit back to back)
+  g_current_stage = CODE_ENTERED;
+}
+
+void check_code() {
+  // Correct code:
+  g_current_stage = CODE_CORRECT;
+
+  // Incorrect code:
+  g_current_stage = CODE_INCORRECT;
+}
+
+void code_incorrect() {
+
+  // Reset stage
+  g_current_stage = WAITING_FOR_CODE;
+}
+
+void code_correct() {
+
+  // Generate random int (1-7) and set voice keyword
+
+  // Display number for keyword
+
+  // Move to next stage
+  g_current_stage = WAITING_FOR_KEYWORD;
+}
+
+void waiting_for_keyword() {
+  // Should be showing keyword int
+  // Process audio input, check against expected keyword
+
+  // If correct keyword spoken
+  g_current_stage = KEYWORD_CORRECT;
+
+  // If incorrect keyword spoken (or timeout?)
+  g_current_stage = KEYWORD_INCORRECT;
+
+}
+
+void keyword_incorrect() {
+
+  // Reset stage
+  g_current_stage = WAITING_FOR_KEYWORD;
+}
+
+void keyword_correct() {
+  // Unlock
+  g_current_stage = UNLOCKED;
+}
+
+void unlocked() {
+  // Show unlocked?
 }

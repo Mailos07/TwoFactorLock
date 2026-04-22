@@ -1,3 +1,9 @@
+/**
+ * @file display.cpp
+ * @brief Methods to display different states on screen
+ * @date 2026-04-22
+ * 
+ */
 #include <Arduino.h>
 
 // Display
