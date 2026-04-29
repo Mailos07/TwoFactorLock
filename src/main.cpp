@@ -65,18 +65,17 @@ void keyword_correct();
 void keyword_incorrect();
 void unlocked();
 void CapturePassword(int currDigit);
-void StartColorChallenge();
 
 int HexToInt(uint8_t hexCode);
 void SaveToSDCard(const String &data);
 void DeleteCodeFile();
-bool DoesFileExist();
+bool does_code_file_exist();
 bool HasStoredPassword();
 bool IsPasswordComplete();
 void ResetPasswordCapture();
-std::array<int, 4> FilePassword();
+std::array<int, 4> get_file_password();
 bool PasswordsMatch(const std::array<int, 4> &storedPassword);
-std::array<String, 2> GenerateRandomColor();
+std::pair<String, String> GenerateRandomColor();
 String PasswordToString(const int digits[4]);
 String PasswordToString(const std::array<int, 4> &digits);
 
@@ -93,6 +92,7 @@ using namespace std;
 /* –– Setup & Loop –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– */
 void setup() {
   Serial.begin(115200);
+  while (!Serial.available()) {}
 
   // Init SD
   g_sd_available = g_sd.begin(SD_CARD_PIN);
@@ -198,6 +198,11 @@ void waiting_for_code() {
   IrReceiver.resume();
 }
 
+/**
+ * Check for stored (correct) password in code file
+ * Compare with input password
+ * Move to CODE_CORRECT or CODE_INCORRECT
+ */
 void check_code() {
   const bool hasStoredPassword = HasStoredPassword();
   const String capturedPassword = PasswordToString(passwordDigits);
@@ -212,7 +217,7 @@ void check_code() {
     return;
   }
 
-  const auto storedPassword = FilePassword();
+  const auto storedPassword = get_file_password();
   if (PasswordsMatch(storedPassword)) {
     ResetPasswordCapture();
     g_current_stage = CODE_CORRECT;
@@ -225,6 +230,9 @@ void check_code() {
 void code_incorrect() {
   isAppLocked = true;
   Serial.println("Password mismatch.");
+
+  display_code_incorrect();
+  delay(3000);
   display_lock_screen();
   ResetPasswordCapture();
   capturingPassword = true;
@@ -233,8 +241,17 @@ void code_incorrect() {
 }
 
 void code_correct() {
-  StartColorChallenge();
 
+  display_code_correct();
+  delay(3000);
+
+  //Has to change to listening model
+  std::pair<String, String> generatedColor = GenerateRandomColor();
+  expectedColorDigit = generatedColor.first.toInt();
+  String message = generatedColor.second + ": (" + generatedColor.first + ")";
+  Serial.println("Password accepted. Enter digit for color: " + message);
+  //display_message(generatedColor.second + " : (" + generatedColor.first + ")");
+  display_say_color_screen(expectedColorDigit);
   // Move to next stage
   g_current_stage = WAITING_FOR_KEYWORD;
 }
@@ -308,21 +325,30 @@ void CapturePassword(int currDigit)
         for (int i = 0; i < currentDigitIndex; i++)
         {
             displayPassword += "*";
+            display_capturing_password(currentDigitIndex);
+
         }
         Serial.println("Captured digit: " + String(currDigit) + " | Display: " + displayPassword);
     }
 }
-bool DoesFileExist()
+
+
+bool does_code_file_exist()
 {
     if (!g_sd_available)
     {
         Serial.println("SD card not available; cannot check for file.");
         return false;
     }
-    return g_sd.exists("lock_config.txt");
+    return g_sd.exists(CODE_FILENAME);
 }
 
-std::array<int, 4> FilePassword()
+/**
+ * Read code file, stripping CODE: prefix
+ * 
+ * @return std::array<int, 4> containing 4 password digits
+ */
+std::array<int, 4> get_file_password()
 {
     std::array<int, 4> password = {-1, -1, -1, -1};
     if (!g_sd_available)
@@ -356,14 +382,18 @@ std::array<int, 4> FilePassword()
     return password;
 }
 
+/**
+ * Check if code file exists
+ * Read code file for password
+ */
 bool HasStoredPassword()
 {
-    if (!DoesFileExist())
+    if (!does_code_file_exist())
     {
         return false;
     }
 
-    const auto password = FilePassword();
+    const auto password = get_file_password();
     for (int digit : password)
     {
         if (digit < 0 || digit > 9)
@@ -451,20 +481,13 @@ void ResetPasswordCapture()
     }
 }
 
-std::array<String, 2> GenerateRandomColor()
+/**
+ * Return pair of <String,String> representing <Index, Color>
+ */
+std::pair<String, String> GenerateRandomColor()
 {
     int randomColorIndex = random(1, 8);
     return {String(randomColorIndex), String(g_keyword_map.at(randomColorIndex).c_str())};
-}
-
-void StartColorChallenge()
-{
-  //Has to change to listening model
-    const auto generatedColor = GenerateRandomColor();
-    expectedColorDigit = generatedColor[0].toInt();
-    String message = generatedColor[1] + ": (" + generatedColor[0] + ")";
-    Serial.println("Password accepted. Enter digit for color: " + message);
-    display_message(generatedColor[1] + " : (" + generatedColor[0] + ")");
 }
 
 String PasswordToString(const int digits[4])

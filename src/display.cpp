@@ -91,3 +91,86 @@ void display_message(const String &message) {
 
     u8g2.sendBuffer();
 }
+
+void display_capturing_password(int digits_entered) {
+    u8g2.clearBuffer();
+
+    u8g2.drawFrame(0, 0, 128, 64);
+
+    u8g2.setFont(u8g2_font_7x13B_tr);
+    const char* title = "ENTER CODE";
+    u8g2.drawStr((128 - u8g2.getStrWidth(title)) / 2, 16, title);
+
+    // Rounded box containing the 4 slots
+    u8g2.drawRFrame(26, 24, 76, 22, 3);
+
+    // 4 slots: filled disc = entered, empty circle = pending
+    const int cy = 35;
+    const int r  = 4;
+    const int cx[4] = {40, 56, 72, 88};
+
+    for (int i = 0; i < 4; i++) {
+        if (i < digits_entered) {
+            u8g2.drawDisc(cx[i], cy, r);
+        } else {
+            u8g2.drawCircle(cx[i], cy, r);
+        }
+    }
+
+    u8g2.sendBuffer();
+}
+
+void display_code_incorrect() {
+    u8g2.clearBuffer();
+
+    // Screen border
+    u8g2.drawFrame(0, 0, 128, 64);
+
+    // Circle with X mark
+    u8g2.drawCircle(64, 18, 12);
+    u8g2.drawLine(57, 11, 71, 25);
+    u8g2.drawLine(71, 11, 57, 25);
+
+    u8g2.setFont(u8g2_font_7x13B_tr);
+    u8g2.drawStr((128 - u8g2.getStrWidth("WRONG CODE")) / 2, 46, "WRONG CODE");
+    u8g2.drawStr((128 - u8g2.getStrWidth("Try Again")) / 2, 60, "Try Again");
+
+    u8g2.sendBuffer();
+}
+
+void display_code_correct() {
+    u8g2.clearBuffer();
+
+    // Screen border
+    u8g2.drawFrame(0, 0, 128, 64);
+
+    // Circle with checkmark
+    u8g2.drawCircle(64, 18, 12);
+    u8g2.drawLine(57, 18, 62, 23);
+    u8g2.drawLine(62, 23, 71, 11);
+
+    u8g2.setFont(u8g2_font_7x13B_tr);
+    u8g2.drawStr((128 - u8g2.getStrWidth("CODE CORRECT")) / 2, 46, "CODE CORRECT");
+
+    u8g2.sendBuffer();
+}
+
+void display_say_color_screen(int digit) {
+    u8g2.clearBuffer();
+
+    u8g2.drawFrame(0, 0, 128, 64);
+
+    u8g2.setFont(u8g2_font_5x8_tr);
+    const char* line1 = "Speak the color";
+    const char* line2 = "corresponding to";
+    const char* line3 = "this number:";
+    u8g2.drawStr((128 - u8g2.getStrWidth(line1)) / 2, 10, line1);
+    u8g2.drawStr((128 - u8g2.getStrWidth(line2)) / 2, 20, line2);
+    u8g2.drawStr((128 - u8g2.getStrWidth(line3)) / 2, 30, line3);
+
+    char digitStr[2] = {(char)('0' + digit), '\0'};
+    u8g2.setFont(u8g2_font_logisoso28_tn);
+    u8g2.drawStr((128 - u8g2.getStrWidth(digitStr)) / 2, 62, digitStr);
+
+    u8g2.sendBuffer();
+}
